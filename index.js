@@ -189,10 +189,11 @@ app.get('/messages', async (req, res) => {
 app.listen(port, '0.0.0.0', () => {
     console.log(`API server running at http://localhost:${port}`);
 });
+// Listening Message inbox 
 client.on('message', async (msg) => {
     const now = new Date();
     const hour = now.getHours();
-      //suka tetiba muncul
+      //suka tetiba muncul dari status. 
       if (msg.from === 'status@broadcast') {
         return;
     } 
@@ -202,23 +203,25 @@ client.on('message', async (msg) => {
     }
 
      if (hour < 7 || hour >= 16) {    
-if (hour < 3) {
-    const reply = "Selamat Tengah Malam, Mohon ditunggu, di luar jam kerja (16.00), akan kami jawab di hari berikutnya";
-    await client.sendMessage(msg.from, reply);
-} else if (hour < 7) {
-    const reply = "Selamat Pagi, Mohon ditunggu, di luar jam kerja (06.30), akan kami jawab nanti saat operator bekerja";
-    await client.sendMessage(msg.from, reply);
-} else if (hour >= 16 && hour < 18) {
-    const reply = "Selamat Sore, Mohon ditunggu, di luar jam kerja (16.00), akan kami jawab di hari berikutnya";
-    await client.sendMessage(msg.from, reply);
-} else if (hour >= 18 && hour < 24) {
-    const reply = "Selamat Malam, Mohon ditunggu, di luar jam kerja (16.00), akan kami jawab di hari berikutnya";
-    await client.sendMessage(msg.from, reply);
-}
-        const sql = 'INSERT INTO messages (number, content, timestamp, replied) VALUES (?, ?, ?, ?)';
-        db.query(sql, [msg.from, msg.body, now, false], (err, result) => {
-            if (err) throw err;
-            console.log('Message saved to database');
-        });
-    }
+            if (hour < 3) {
+                const reply = "Selamat Tengah Malam, Mohon ditunggu, di luar jam kerja (16.00), akan kami jawab di hari berikutnya";
+                await client.sendMessage(msg.from, reply);
+            } else if (hour < 7) {
+                const reply = "Selamat Pagi, Mohon ditunggu, di luar jam kerja (06.30), akan kami jawab nanti saat operator bekerja";
+                await client.sendMessage(msg.from, reply);
+            } else if (hour >= 16 && hour < 18) {
+                const reply = "Selamat Sore, Mohon ditunggu, di luar jam kerja (16.00), akan kami jawab di hari berikutnya";
+                await client.sendMessage(msg.from, reply);
+            } else if (hour >= 18 && hour < 24) {
+                const reply = "Selamat Malam, Mohon ditunggu, di luar jam kerja (16.00), akan kami jawab di hari berikutnya";
+                await client.sendMessage(msg.from, reply);
+            }
+                    const sql = 'INSERT INTO messages (number, content, timestamp, replied) VALUES (?, ?, ?, ?)';
+                    db.query(sql, [msg.from, msg.body, now, false], (err, result) => {
+                        if (err) throw err;
+                        console.log('Message saved to database');
+                    });
+                }
 });
+
+// End Listening 
