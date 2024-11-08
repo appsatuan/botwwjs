@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="https://sman81.sch.id/wp-content/uploads/2020/02/cropped-logo2x81-32x32.png">
+    <title>Sistem Data Siswa</title>
+
+    <link href="assets/css/animate.css" rel="stylesheet">
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/fas5pro/css/all.min.css"> 
+    <link href="assets/css/bootstrapValidator.css" rel="stylesheet">
+    <link href="https://siswa.sman81.sch.id/assets/css/stylehome.css" rel="stylesheet">
+    <link href="node_modules/sweetalert2/dist/sweetalert2.css" rel="stylesheet">
+    <script src="node_modules/jquery/dist/jquery.min.js"></script>   
+    <script id="MathJax-script" async src="node_modules/mathjax/es5/tex-mml-chtml.js"></script>
+    <style>
+        .text-hijau { color: #198754; }
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .loginColumns { padding: 20px; }
+        .bg { margin-left: 20%; margin-right: auto; }
+        .bg img { margin-top: -13px; max-width: 800px; border-radius: 5px; }
+        @media (max-width: 500px) {
+            .bg { margin-left: 0 !important; margin-right: auto !important; }
+            .bg img { margin-top: -13px !important; width: 100% !important; height: auto !important; border-radius: 5px !important; }
+        }
+        @media (max-width: 1920px) { #hd img { width: 100% !important; height: auto !important; } }
+        @media (max-width: 1280px) { #hd img { width: 100% !important; height: auto !important; } }
+        @media (max-width: 1024px) { #hd img { width: 100% !important; height: auto !important; } }
+        @media (max-width: 700px) { #hd img { width: 100% !important; height: auto !important; } }
+        @media (max-width: 480px) { #hd img { width: 100% !important; height: auto !important; } }
+        @media (max-width: 360px) { #hd img { width: 100% !important; height: auto !important; } }
+        table {
+            font-family: "open sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 13px;
+            color: #676a6c;
+        }
+        p { color: #676a6c !important; }
+    </style>
+</head>
+<body class="gray-bg">
+    <div id="overlay" style="display: none;">
+        <div class="spinner"></div>
+    </div>
+    <div class="bg"></div>
+    <div class="loginColumns">
+        <div class="row">                
+            <div class="col-md-5" style="margin-top:30px">
+                <div class="ibox float-e-margins" id="formlogin"></div>
+                <div class="ibox float-e-margins" id="formregister">
+                    <h3 style="text-align:center" class="font-bold animated bounce">
+                        <strong><font color="black">Form Reset Password</font></strong>
+                    </h3>
+                    <div class="ibox-content">
+                        <h3 class="font-bold text-navy">Isikan NIS</h3>
+                        <p align="justify">
+                            Cek <strong class="text-hijau">token</strong> yang dikirim ke Whatsapp 
+                            <i class="fab fa-whatsapp-square text-hijau"></i>
+                        </p>
+                        <form id="regisForm" method="POST" class="form-horizontal" role="form" name="login" onsubmit="loginUser(); return false;">
+                            <div class="form-group" id="inputsidanira">
+                                <div class="col-lg-12">
+                                    <input type="text" class="form-control" name="sidanira" placeholder="NIS" id="sidanira" value="">
+                                </div>
+                            </div>
+                            <div class="form-group" style="display:none" id="inputtoken">
+                                <div class="col-lg-12">
+                                    Token
+                                    <small class="text-danger">
+                                        <a target="_blank" href="https://api.whatsapp.com/send?phone=6282227551553&text=Selamat%20pagi%2C%20%0Asaya%20%5BNama%5D%20NIS%20.%20.%20.%20.%20kendala%20token%20tidak%20terkirim%20ke%20WA.%20%0A">
+                                            <span style="font-weight: bold;">Jika token tidak diterima, Chat Admin <i class="fab fa-whatsapp"></i></span>
+                                        </a>
+                                    </small>
+                                    <input type="text" class="form-control" id="token" name="token" placeholder="Token - cek WA" autocomplete="off">
+                                    Password baru
+                                    <input type="password" class="form-control" id="passwordbaru" name="passwordbaru" placeholder="Password baru" autocomplete="off">
+                                    <button type="button" id="togglePassword" class="btn btn-secondary">Show Password</button>
+                                </div>
+                            </div>
+                            <div class="form-group" id="buttontoken">
+                                <div class="col-lg-12">
+                                    <button class="btn btn-primary block full-width m-b" id="gettoken" name="gettoken">Minta Token</button>
+                                </div>
+                            </div>
+                            <div class="form-group" style="display:none" id="buttonpassword">
+                                <div class="col-lg-12" id="divgetpass">
+                                    <button class="btn btn-primary block full-width m-b" id="getpass" name="getpass">Buat Password</button>
+                                </div>
+                            </div>
+                            <div class="form-group" id="newpass" style="display:none">
+                                <div class="col-lg-12">
+                                    <div class="alert alert-success m-b" role="alert">
+                                        <strong>Password baru sudah diupdate!</strong><br> Silakan login  <br> 
+                                        password di siswa.sman81.sch.id = cbt.sman81.sch.id
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group" style="display:none" id="btn-pass-login">
+                                <div class="col-lg-12">
+                                    <a href="#" class="btn btn-success block full-width m-b" id="getpass" name="getpass">Login</a>
+                                </div>
+                            </div>
+                        </form>
+                        <div class="form-group" style="display:none">
+                            <div class="col-12">
+                                <a href="#" class="btn btn-primary block full-width m-b" id="login-btn">Masuk</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-7">
+                <div class="widget style1" style="margin-top:0px">
+                    <div class="row">
+                        <div class="col-xs-12 text-right">
+                            <span style="font-size:20px; color:black; text-shadow: 2px 2px 3px #fff;">Selamat Datang di</span>
+                            <h2 class="font-bold text-hijau animated bounceInRight">CBT SMAN 81 Jakarta</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="ibox-content" id="hd">
+                    <img src="https://siswa.sman81.sch.id/assets/img/bg-1.jpg">
+                </div>
+                <div class="ibox-content">
+                    <div id="slidertext" class="text-center">
+                        <p style="color:black; text-shadow: 2px 2px 4px #fff;">
+                            Sistem ini juga digunakan untuk kegiatan penilaian online siswa.
+                            <br>
+                            <strong>Informasi login siswa dan orang tua</strong>
+                            <br>
+                            <i class="fa fa-chevron-right"></i> Akses login cbt.sman81.sch.id menggunakan <strong>NIS</strong> siswa.
+                            <br>
+                            <i class="fa fa-chevron-right"></i> Untuk siswa baru, password adalah <strong>NIS</strong>.
+                            <br>
+                            <i class="fa fa-chevron-right"></i> Setelah login, update password untuk keamanan.
+                        </p>
+                    </div>
+                </div>
+                <div class="ibox-content" id="list" style="display:none"></div>
+            </div>
+        </div>
+        <div class="row"></div>
+    </div>
+    <script src="node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="assets/js/bootstrapValidator.js"></script>
+    <script src="node_modules/sweetalert2/dist/sweetalert2.js"></script>
+    <script src="https://siswa.sman81.sch.id/assets/js/inspinia.js"></script>
+    <script>
+       
+       
+       $('#gettoken').on('click', function() {
+                const formData = {
+                    sidanir: $('#sidanira').val()
+                };
+                
+                $.post('http://cbt.sman81.sch.id:8000/send-message-reset', formData, function(response) {   
+                    Swal.fire({
+                        icon: "success",
+                        title: "Send", 
+                        text: response.message, 
+                        showConfirmButton: false,
+                        timer: 800
+                    });     
+                }).fail(function(error) {
+                    Swal.fire({
+                        icon: "error",
+                        title: "Error",
+                        text: 'Error sending message: ' + error.responseJSON.error
+                    });
+                });
+            });
+    </script>
+</body>
+</html>

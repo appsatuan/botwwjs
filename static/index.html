@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>81 Whatsapp</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .chat-bubble {
+            margin: 6px 0px;
+            padding: 4px 8px;
+            display: block;
+            position: relative;
+            max-width: 80%;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.13);
+            clear: both;
+        }
+        .msg-in {
+            background: #fff;
+            text-align: left;
+            float: left;
+        }
+        .msg-in::before {
+            content: "";
+            position: absolute;
+            width: 0;
+            height: 0;
+            left: -6px;
+            top: 0;
+            border: 10px solid transparent;
+            border-top-color: #fff;
+        }
+        .msg-in::after {
+            content: attr(data-time);
+            font-size: 12px;
+            color: #8a8a8a;
+            position: relative;
+            margin: 4px;
+            float: right;
+            bottom: -6px;
+            right: -8px;
+        }
+        .replied {
+            color: blue;
+        }
+        .not-replied {
+            color: red;
+        }
+        #sendMessageFormContainer {
+            display: none;
+        }
+        #messagesContainer {
+            max-height: 50vh; /* Adjust this value as needed */  
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-2">
+        <h4 class="mb-4">WhatsApp Admin 81</h4>
+        <div id="status" class="alert alert-info"></div>
+        <h4>Messages</h4>
+        <div id="messagesContainer" class="list-group">
+          <ul id="messages" class="list-group"></ul>
+        </div> 
+        <button id="load-more" class="btn btn-primary mt-3">Load More</button>
+        <div id="passwordContainer" class="mt-4">
+            <input type="password" id="passwordInput" class="form-control" placeholder="Enter password">
+            <button id="submitPassword" style="display: none;" class="btn btn-primary mt-3">Submit</button>
+        </div>
+
+        <div id="sendMessageFormContainer" class="mt-4">
+            <form id="sendMessageForm">
+                <div class="form-group">
+                    <label>Mode</label>
+                    <div>
+                        <input type="radio" id="single" name="mode" value="single" checked>
+                        <label for="single">Single</label>
+                    </div>
+                    <div> 
+                        <input type="radio" id="burst" name="mode" value="burst">
+                        <label for="burst">Burst</label>
+                    </div>
+                </div> 
+                <div id="singleForm">  
+                 <div class="form-group">
+                    <label for="number">Number</label>
+                    <input type="text" class="form-control" id="number" name="number">
+                </div>
+                <div class="form-group">
+                    <label for="message">Message</label>
+                    <textarea class="form-control" id="message" name="message"></textarea>  
+                </div>
+                <div class="form-group">
+                    <label for="mediaUrl">Media URL (optional)</label>
+                    <input type="text" class="form-control" id="mediaUrl" name="mediaUrl">
+                </div>
+            </div> 
+              
+                <div class="form-group" id="burstNumbersContainer" style="display: none;">
+                    <label for="burstNumbers">Numbers (one per line)</label>
+                    <textarea class="form-control" id="burstNumbers" name="burstNumbers" placeholder="number#message"></textarea>
+                </div> 
+                <button type="submit" class="btn btn-primary">Send Message</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script>
+    let messageLimit = 10;
+	     let statusInterval;
+
+function fetchStatus() {
+        $.get('/status', function(data) {
+            $('#status').text(data.isClientReady ? 'Client is ready' : 'Client is not ready');
+            // Stop the interval if the client is ready
+            if (data.isClientReady) {
+                clearInterval(statusInterval);
+            }
+        }).fail(function(error) {
+            console.error('Error fetching status:', error);
+        });
+    }
+    function formatTime(dateString) {
+        const options = { hour: 'numeric', minute: 'numeric', hour12: true };
+        const date = new Date(dateString);
+        return date.toLocaleString('en-US', options);
+    }
+
+    function fetchMessages() {
+        $.get('/messages', { limit: messageLimit }, function(data) {
+            const messagesList = $('#messages');
+            messagesList.empty();
+            data.forEach(function(message) {
+                let numberku = message.number.replace('@c.us', '');
+                const lastFourDigits = numberku.slice(-4);
+                const repliedStatus = message.replied ? 'replied' : 'not';
+                const statusColor = message.replied ? 'blue' : 'red';
+                const formattedTime = formatTime(message.timestamp);
+                messagesList.append(`
+                    <li class="list-group-item">
+                        <p data-time="${repliedStatus} | ${formattedTime}" class="chat-bubble msg-in">
+                            <span style="font-size:0.8em;color:#acacac">***${lastFourDigits}</span>
+                            <br>${message.content}
+                        </p>
+                    </li>
+                `);
+            });
+        });
+    }
+
+    function sendBurstMessages(entries, mediaUrl) {
+    if (entries.length === 0) return;
+
+    const entry = entries.shift();
+    const [number, message] = entry.split('#');
+    const formData = { number, message, mediaUrl };
+    const teks = "terkirim ke " + number;   
+
+    $.post('/send-message', formData, function(response) {
+        Swal.fire({
+            icon: "success",
+            title: "Send",  
+            text: teks,
+            showConfirmButton: false,
+            timer: 800
+        });
+        fetchMessages();
+
+        // Use setTimeout to avoid blocking and to allow UI updates between calls
+        setTimeout(function() {
+            sendBurstMessages(entries, mediaUrl);
+        }, 5000);
+    }).fail(function(error) {
+        alert('Error sending message: ' + error.responseJSON.error);
+    });
+}
+   
+
+    $(document).ready(function() {
+        fetchStatus();
+        fetchMessages();
+         statusInterval = setInterval(fetchStatus, 5000);
+	 setInterval(fetchMessages, 60000);
+
+        $('#load-more').click(function() {
+            messageLimit += 10;
+            fetchMessages();
+        });
+    const encodedPassword = 'YWRtODE=';
+
+    // Function to encode a string to Base64
+    function encodeToBase64(str) {
+        return btoa(str);
+    }
+
+        function checkPassword() {
+                const password = $('#passwordInput').val();
+                // Encode the user input to Base64
+                const encodedInputPassword = encodeToBase64(password);
+
+                // Compare the Base64 encoded input with the stored Base64 encoded password
+                if (encodedInputPassword === encodedPassword) {
+                    $('#passwordContainer').hide();
+                    $('#sendMessageFormContainer').show();
+                } else {
+                    Swal.fire({
+            icon: "error",
+            title: "Send",
+            text: "Password Salah", 
+            showConfirmButton: false,
+            timer: 800
+            });
+                }
+            }
+
+            // Event listener for the submit button
+            $('#submitPassword').click(function() {
+                checkPassword();
+            });
+
+            // Event listener for the Enter key on the password input field
+            $('#passwordInput').keypress(function(event) {
+                if (event.which === 13) { // 13 is the Enter key
+                    checkPassword();
+                }
+            });
+
+			$('input[name="mode"]').change(function() {
+            if (this.value === 'burst') {
+                $('#burstNumbersContainer').show();
+                $('#singleForm').hide();
+                $('#number').prop('required', false);
+            } else {
+                $('#burstNumbersContainer').hide();
+                $('#singleForm').show(); 
+                $('#number').prop('required', true);
+            }
+        });
+
+        $('#sendMessageForm').submit(function(event) {
+    event.preventDefault();
+    const mode = $('input[name="mode"]:checked').val();
+
+    if (mode === 'single') {
+        const formData = {
+            number: $('#number').val(),
+            message: $('#message').val(),
+            mediaUrl: $('#mediaUrl').val()
+        };
+        if (!formData.mediaUrl.trim()) {
+            delete formData.mediaUrl;
+        }
+        $.post('/send-message', formData, function(response) {  
+            Swal.fire({
+                icon: "success",
+                title: "Send",
+                text: response.message, 
+                showConfirmButton: false,
+                timer: 800
+            });
+
+            fetchMessages();
+        }).fail(function(error) {
+            alert('Error sending message: ' + error.responseJSON.error);
+        });
+    } else if (mode === 'burst') {
+        const burstEntries = $('#burstNumbers').val().split('\n').map(entry => entry.trim()).filter(entry => entry);
+        sendBurstMessages(burstEntries, $('#mediaUrl').val());
+    }
+});
+
+    });
+</script>
+
+        </body>
+</html>
+
