@@ -4,6 +4,7 @@ lib-cov
 # Dependency directories
 node_modules/
 jspm_packages/
+wwapi/
 
 # dotenv environment variable files
 .env
